@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TaxCaddy Team Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f2f0eb;--surf:#ffffff;--surf2:#ece9e3;--surf3:#e4e0d8;
+  --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);--bdr3:rgba(0,0,0,0.22);
+  --txt:#17160f;--txt2:#5c5950;--txt3:#9a9790;
+  --blue:#1254a0;--bluebg:#deeaf8;--bluemid:#92bce8;
+  --green:#285e0c;--greenbg:#dff0cd;
+  --purple:#342d8a;--purplebg:#eae8fc;
+  --red:#8f2222;--redbg:#f8e2e2;
+  --amber:#7a4206;--amberbg:#f8e8d0;
+  --teal:#0e6b6b;--tealbg:#d4f0f0;
+  --r:10px;--rsm:7px;--rpill:99px;
+  --sh:0 1px 3px rgba(0,0,0,0.07),0 0 0 0.5px rgba(0,0,0,0.07);
+  --sh2:0 2px 8px rgba(0,0,0,0.09),0 0 0 0.5px rgba(0,0,0,0.07);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111009;--surf:#1a1910;--surf2:#222118;--surf3:#2c2b20;
+  --bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.13);--bdr3:rgba(255,255,255,0.2);
+  --txt:#ece9e0;--txt2:#9e9a90;--txt3:#615e58;
+  --blue:#5aa0e0;--bluebg:#0a2440;--bluemid:#1a4570;
+  --green:#72b830;--greenbg:#162808;
+  --purple:#9890f0;--purplebg:#1c1838;
+  --red:#e07070;--redbg:#280c0c;
+  --amber:#f0a830;--amberbg:#281400;
+  --teal:#3dd0d0;--tealbg:#052828;
+  --sh:0 1px 4px rgba(0,0,0,0.4),0 0 0 0.5px rgba(255,255,255,0.05);
+  --sh2:0 2px 10px rgba(0,0,0,0.5),0 0 0 0.5px rgba(255,255,255,0.05);
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px;line-height:1.5}
+code{font-family:'SF Mono','Fira Code','Consolas',monospace;font-size:.88em;background:var(--surf2);padding:1px 5px;border-radius:4px;border:0.5px solid var(--bdr2)}
+strong{font-weight:600}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surf);border-bottom:0.5px solid var(--bdr2);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;color:var(--txt);text-decoration:none;flex-shrink:0}
+.logo-icon{width:28px;height:28px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:15px;height:15px;color:#fff}
+.tb-sep{width:0.5px;height:18px;background:var(--bdr3);flex-shrink:0}
+.tb-sub{font-size:12px;color:var(--txt3);flex-shrink:0}
+.tb-space{flex:1}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--rpill);font-size:11px;font-weight:700;flex-shrink:0}
+.pill svg{width:11px;height:11px;flex-shrink:0}
+.p-blue{background:var(--bluebg);color:var(--blue)}
+.p-green{background:var(--greenbg);color:var(--green)}
+.p-purple{background:var(--purplebg);color:var(--purple)}
+.p-red{background:var(--redbg);color:var(--red)}
+.p-gray{background:var(--surf3);color:var(--txt2)}
+.p-teal{background:var(--tealbg);color:var(--teal)}
+.p-amber{background:var(--amberbg);color:var(--amber)}
+
+/* ── TAB NAV ── */
+.tabnav{background:var(--surf);border-bottom:0.5px solid var(--bdr2);padding:0 24px;display:flex;gap:0;position:sticky;top:52px;z-index:190}
+.tab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--txt2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-0.5px;display:flex;align-items:center;gap:7px;transition:color .15s,border-color .15s}
+.tab svg{width:14px;height:14px;flex-shrink:0}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1340px;margin:0 auto;padding:24px 24px 80px}
+
+/* ── AUTH CARD ── */
+.acard{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh2);padding:24px 26px;margin-bottom:20px;border:0.5px solid var(--bdr)}
+.acard-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.acard-ico{width:42px;height:42px;background:var(--surf2);border-radius:var(--rsm);border:0.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.acard-ico svg{width:20px;height:20px;color:var(--txt2)}
+.acard-title{font-size:15px;font-weight:700;color:var(--txt)}
+.acard-desc{font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.6}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.fgrid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+input[type=password],input[type=text]{height:38px;padding:0 12px;border-radius:var(--rsm);border:1px solid var(--bdr2);background:var(--surf2);color:var(--txt);font-size:13px;width:100%;transition:border-color .15s,box-shadow .15s}
+input[type=password]{font-family:'SF Mono','Fira Code','Consolas',monospace;letter-spacing:.05em}
+input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(18,84,160,.13)}
+.trow{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px}
+.trow .fg{flex:1}
+.btn{height:38px;padding:0 16px;border-radius:var(--rsm);border:1px solid var(--bdr2);background:var(--surf);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .12s,transform .09s;white-space:nowrap;flex-shrink:0}
+.btn:hover{background:var(--surf2)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{filter:brightness(1.12)}
+.btn-teal{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-teal:hover{filter:brightness(1.12)}
+.btn-icon{width:38px;padding:0;justify-content:center;background:var(--surf2)}
+.btn-icon svg{width:16px;height:16px;color:var(--txt2)}
+.btn-export{background:var(--greenbg);border-color:var(--green);color:var(--green);height:34px;padding:0 14px;font-size:12px}
+.btn-export:hover{background:var(--green);color:#fff}
+.btn-export svg{width:14px;height:14px}
+.status{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:var(--rsm);font-size:13px;line-height:1.6}
+.status svg{width:15px;height:15px;flex-shrink:0;margin-top:2px}
+.s-idle{background:var(--surf2);color:var(--txt2)}
+.s-ok{background:var(--greenbg);color:var(--green)}
+.s-err{background:var(--redbg);color:var(--red)}
+.s-load{background:var(--bluebg);color:var(--blue)}
+.prog{margin-top:11px;display:none}
+.prog-lbl{font-size:12px;color:var(--txt2);margin-bottom:5px;display:flex;justify-content:space-between}
+.prog-track{height:4px;background:var(--bdr);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:4px;transition:width .2s ease}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.metrics6{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:22px}
+.mc{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px;border:0.5px solid var(--bdr)}
+.mc-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--txt3);margin-bottom:9px}
+.mc-val{font-size:32px;font-weight:800;line-height:1;color:var(--txt)}
+.mc-sub{font-size:11px;color:var(--txt3);margin-top:6px}
+
+/* ── SECTION HEADERS ── */
+.sec-hd{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--txt3);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sec-hd svg{width:13px;height:13px;flex-shrink:0}
+.sec-hd-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-hd-row .sec-hd{margin-bottom:0}
+
+/* ── REPO CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--surf);border:0.5px solid var(--bdr2);border-radius:var(--rpill);padding:5px 12px;font-size:12px;color:var(--txt2);box-shadow:var(--sh)}
+.chip svg{width:11px;height:11px;flex-shrink:0}
+.chip .cn{background:var(--bluebg);color:var(--blue);border-radius:var(--rpill);padding:1px 7px;font-size:10px;font-weight:800}
+
+/* ── USER GRID ── */
+.ugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:22px}
+.uc{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh);border:0.5px solid var(--bdr);padding:13px 15px;display:flex;align-items:center;gap:11px}
+.av{width:36px;height:36px;border-radius:50%;background:var(--bluebg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.un{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.um{font-size:11px;color:var(--txt2);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+
+/* ── TABLE ── */
+.tcard{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh2);border:0.5px solid var(--bdr);overflow:hidden}
+.ttbar{padding:12px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--bdr)}
+.ttitle{font-size:13px;font-weight:700;color:var(--txt);flex:1;min-width:120px}
+.tcnt{font-size:12px;font-weight:400;color:var(--txt3);margin-left:6px}
+.sinp{height:33px;padding:0 11px 0 31px;border-radius:var(--rsm);border:1px solid var(--bdr2);background:var(--surf2);color:var(--txt);font-size:13px;width:180px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%239a9790' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;transition:border-color .15s}
+.sinp:focus{outline:none;border-color:var(--blue)}
+select.fsel{height:33px;padding:0 26px 0 9px;border-radius:var(--rsm);border:1px solid var(--bdr2);background:var(--surf2);color:var(--txt);font-size:12px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%239a9790' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;cursor:pointer}
+select.fsel:focus{outline:none;border-color:var(--blue)}
+.tcols{display:grid;grid-template-columns:70px minmax(0,2.4fr) minmax(0,1fr) minmax(0,1.4fr) 84px 82px 80px;gap:10px}
+.thead-row{padding:9px 18px;background:var(--surf2);border-bottom:0.5px solid var(--bdr);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)}
+.tr{padding:12px 18px;border-bottom:0.5px solid var(--bdr);align-items:center;transition:background .1s}
+.tr:last-child{border-bottom:none}
+.tr:hover{background:var(--surf2)}
+.prnum a{color:var(--blue);font-weight:700;font-size:11px;font-family:'SF Mono','Fira Code','Consolas',monospace}
+.prnum a:hover{text-decoration:underline}
+.prtitle{font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prrepo{font-size:11px;color:var(--txt3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prauth{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
+.prauth img,.ainit{width:20px;height:20px;border-radius:50%;background:var(--bluebg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.prdate{font-size:11px;color:var(--txt3)}
+.tpag{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-top:0.5px solid var(--bdr);font-size:12px;color:var(--txt2)}
+.empty{text-align:center;padding:52px 20px;color:var(--txt2)}
+.empty svg{width:40px;height:40px;margin:0 auto 14px;display:block;color:var(--txt3)}
+.empty p{font-size:14px}
+.empty small{font-size:12px;color:var(--txt3);display:block;margin-top:5px}
+
+/* ── ADO SPRINT TABLE ── */
+.ado-cols{display:grid;grid-template-columns:50px minmax(0,2.6fr) 110px minmax(0,1.1fr) 80px 70px 70px;gap:10px}
+.ado-cols-member{display:grid;grid-template-columns:minmax(0,1.4fr) 70px 70px 70px 70px 80px 80px;gap:10px}
+
+/* Column header filters */
+.col-hd{display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;position:relative;white-space:nowrap}
+.col-hd:hover{color:var(--txt)}
+.col-hd.filtered{color:var(--blue)}
+.col-hd .sort-ico{opacity:0.4;flex-shrink:0;transition:opacity .15s}
+.col-hd:hover .sort-ico,.col-hd.filtered .sort-ico{opacity:1}
+.col-filter-wrap{position:relative;display:inline-block}
+.col-filter-panel{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;max-width:240px;background:var(--surf);border:0.5px solid var(--bdr2);border-radius:var(--rsm);box-shadow:var(--sh2);z-index:400;display:none;padding:6px}
+.col-filter-panel.open{display:block}
+.col-filter-search{width:100%;height:30px;padding:0 8px;border:1px solid var(--bdr2);border-radius:var(--rsm);background:var(--surf2);color:var(--txt);font-size:12px;margin-bottom:5px}
+.col-filter-search:focus{outline:none;border-color:var(--blue)}
+.col-filter-list{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.col-filter-item{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--txt2);transition:background .1s}
+.col-filter-item:hover{background:var(--surf2);color:var(--txt)}
+.col-filter-item input[type=checkbox]{width:13px;height:13px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.col-filter-item.checked{color:var(--txt);font-weight:500}
+.col-filter-footer{display:flex;gap:5px;margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bdr)}
+.col-filter-footer button{flex:1;height:26px;font-size:11px;font-weight:600;border-radius:var(--rsm);border:1px solid var(--bdr2);cursor:pointer;transition:background .12s}
+.col-filter-footer .cf-apply{background:var(--blue);border-color:var(--blue);color:#fff}
+.col-filter-footer .cf-apply:hover{filter:brightness(1.1)}
+.col-filter-footer .cf-clear{background:var(--surf2);color:var(--txt2)}
+.col-filter-footer .cf-clear:hover{background:var(--surf3)}
+.col-filter-count{font-size:10px;color:var(--txt3);padding:2px 6px;margin-bottom:4px}
+/* Member cards */
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:22px}
+.mcard{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh);border:0.5px solid var(--bdr);padding:14px 16px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.mcard:hover,.mcard.sel{box-shadow:var(--sh2);border-color:var(--blue)}
+.mcard.sel{background:var(--bluebg)}
+.mcard-name{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}
+.mcard-stats{display:flex;gap:6px;flex-wrap:wrap}
+.mstat{display:flex;flex-direction:column;align-items:center;background:var(--surf2);border-radius:var(--rsm);padding:5px 10px;min-width:44px}
+.mstat-val{font-size:16px;font-weight:800;line-height:1}
+.mstat-lbl{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--txt3);margin-top:2px}
+
+/* Sprint state pills */
+.st-active{background:#dff0cd;color:#285e0c}
+.st-new{background:#deeaf8;color:#1254a0}
+.st-resolved{background:#eae8fc;color:#342d8a}
+.st-closed{background:#e4e0d8;color:#5c5950}
+.st-removed{background:#f8e2e2;color:#8f2222}
+.wi-bug{color:#8f2222}
+.wi-task{color:#1254a0}
+.wi-story{color:#342d8a}
+.wi-feature{color:#285e0c}
+.wi-epic{color:#7a4206}
+
+/* Sprint info banner */
+.sprint-banner{background:var(--surf);border-radius:var(--r);box-shadow:var(--sh);border:0.5px solid var(--bdr);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.sprint-name{font-size:15px;font-weight:700;color:var(--txt)}
+.sprint-dates{font-size:12px;color:var(--txt2)}
+.sprint-days{font-size:12px;font-weight:600;padding:4px 12px;border-radius:var(--rpill);background:var(--amberbg);color:var(--amber)}
+
+/* Export dropdown */
+.exp-wrap{position:relative;display:inline-block}
+.exp-menu{position:absolute;top:calc(100% + 6px);right:0;background:var(--surf);border:0.5px solid var(--bdr2);border-radius:var(--rsm);box-shadow:var(--sh2);min-width:220px;z-index:300;overflow:hidden;display:none}
+.exp-menu.open{display:block}
+.exp-menu-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;color:var(--txt);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .1s}
+.exp-menu-item:hover{background:var(--surf2)}
+.exp-menu-item svg{width:15px;height:15px;flex-shrink:0}
+.exp-menu-sep{height:0.5px;background:var(--bdr);margin:4px 0}
+.exp-menu-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);padding:8px 14px 4px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:rota .65s linear infinite}
+@keyframes rota{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--txt);color:var(--bg);padding:10px 18px;border-radius:var(--rsm);font-size:13px;font-weight:500;box-shadow:var(--sh2);z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Divider */
+.divider{height:0.5px;background:var(--bdr);margin:20px 0}
+
+@media(max-width:1000px){
+  .metrics{grid-template-columns:repeat(3,1fr)}
+  .metrics6{grid-template-columns:repeat(3,1fr)}
+  .fgrid{grid-template-columns:1fr 1fr}
+  .fgrid4{grid-template-columns:1fr 1fr}
+  .tcols{grid-template-columns:62px minmax(0,2fr) minmax(0,1fr) 80px 76px}
+  .tcols>*:nth-child(4),.tcols>*:nth-child(6),.tcols>*:nth-child(7){display:none}
+  .ado-cols{grid-template-columns:40px minmax(0,2fr) 90px minmax(0,1fr) 70px}
+  .ado-cols>*:nth-child(6),.ado-cols>*:nth-child(7){display:none}
+}
+@media(max-width:640px){
+  .wrap{padding:14px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metrics6{grid-template-columns:repeat(2,1fr)}
+  .fgrid{grid-template-columns:1fr}
+  .fgrid4{grid-template-columns:1fr 1fr}
+  .sinp{width:140px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="#" class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    </div>
+    TaxCaddy Team Dashboard
+  </a>
+  <div class="tb-sep"></div>
+  <span class="tb-sub">Thomson Reuters · TaxProf</span>
+  <div class="tb-space"></div>
+  <span class="pill p-blue" id="tbOrg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>tr</span>
+  <span class="pill p-gray" id="tbRepos" style="display:none">0 repos</span>
+  <span class="pill p-purple" id="tbPRs" style="display:none">0 PRs</span>
+  <span class="pill p-teal" id="tbSprint" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    No sprint
+  </span>
+</div>
+
+<!-- TAB NAV -->
+<div class="tabnav">
+  <button class="tab active" onclick="switchTab('gh')" id="tab-gh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    GitHub · AI Generated PRs
+  </button>
+  <button class="tab" onclick="switchTab('ado')" id="tab-ado">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Azure DevOps · Sprint Monitor
+  </button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="wrap">
+
+  <!-- ══════════ TAB 1: GITHUB ══════════ -->
+  <div class="tab-panel active" id="panel-gh">
+    <div class="acard">
+      <div class="acard-top">
+        <div class="acard-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div>
+          <div class="acard-title">GitHub Authentication</div>
+          <div class="acard-desc">PAT with <code>repo</code> scope — calls go directly to <code>api.github.com</code>. Token is never stored. &nbsp;<a href="https://github.com/settings/tokens/new?scopes=repo&description=PR+Dashboard" target="_blank">Generate token ↗</a></div>
+        </div>
+      </div>
+      <div class="trow">
+        <div class="fg">
+          <label>Personal Access Token (PAT)</label>
+          <input type="password" id="tokInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')connect()"/>
+        </div>
+        <button class="btn btn-icon" onclick="toggleTok()" title="Show/hide token">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="eyeSvg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-primary" id="scanBtn" onclick="connect()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span id="scanLbl">Connect &amp; Scan</span>
+        </button>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>Organisation</label><input type="text" id="orgInp" value="tr" onkeydown="if(event.key==='Enter')connect()"/></div>
+        <div class="fg"><label>Repo Prefix</label><input type="text" id="prefInp" value="a208548_" onkeydown="if(event.key==='Enter')connect()"/></div>
+        <div class="fg"><label>PR Label</label><input type="text" id="lblInp" value="AI Generated" onkeydown="if(event.key==='Enter')connect()"/></div>
+      </div>
+      <div class="status s-idle" id="statusEl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Enter your GitHub PAT and click <strong>Connect &amp; Scan</strong>.</span>
+      </div>
+      <div class="prog" id="progEl">
+        <div class="prog-lbl"><span id="progLbl">Scanning…</span><span id="progPct">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="dash">
+      <div class="empty" style="padding:72px 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        <p>Authenticate above to load the dashboard</p>
+        <small>Will scan every <code>a208548_*</code> repo automatically</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TAB 2: ADO SPRINT ══════════ -->
+  <div class="tab-panel" id="panel-ado">
+    <div class="acard">
+      <div class="acard-top">
+        <div class="acard-ico" style="background:var(--tealbg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal)"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <div class="acard-title">Azure DevOps — Sprint Monitor</div>
+          <div class="acard-desc">Uses your ADO Personal Access Token with <code>Work Items (Read)</code> scope. <a href="https://dev.azure.com" target="_blank">Generate at dev.azure.com ↗</a> → User Settings → Personal Access Tokens.</div>
+        </div>
+      </div>
+      <div class="trow">
+        <div class="fg">
+          <label>ADO Personal Access Token</label>
+          <input type="password" id="adoTok" placeholder="ADO PAT — Work Items (Read) scope" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')adoFetchSprints()"/>
+        </div>
+        <button class="btn btn-icon" onclick="toggleAdoTok()" title="Show/hide token">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="adoEyeSvg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-teal" id="adoConnectBtn" onclick="adoFetchSprints()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span id="adoConnectLbl">Connect</span>
+        </button>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>ADO Organisation</label><input type="text" id="adoOrg" value="tr-tax" placeholder="e.g. tr-tax" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+        <div class="fg"><label>Project</label><input type="text" id="adoProject" value="TaxProf" placeholder="e.g. TaxProf" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+        <div class="fg"><label>Team</label><input type="text" id="adoTeam" value="surePrep-tcd-elite" placeholder="e.g. surePrep-tcd-elite" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Cloudflare Proxy URL <span style="color:var(--txt3);font-weight:400;letter-spacing:0;text-transform:none;font-size:10px">— required for GitHub Pages · <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/workers" target="_blank" style="color:var(--teal)">Create free worker ↗</a></span></label>
+        <input type="text" id="adoProxy" placeholder="https://ado-proxy.YOUR-NAME.workers.dev" style="font-family:inherit"/>
+      </div>
+      <!-- Sprint selector row — shown after connect -->
+      <div id="adoSprintRow" style="display:none;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+          <div class="fg" style="flex:1;min-width:200px">
+            <label>Select Sprint</label>
+            <select id="adoSprintSel" class="fsel" style="height:38px;width:100%;font-size:13px;padding:0 28px 0 12px">
+              <option value="">— pick a sprint —</option>
+            </select>
+          </div>
+          <button class="btn btn-teal" id="adoScanBtn" onclick="adoConnect()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="adoScanLbl">Load Sprint</span>
+          </button>
+        </div>
+      </div>
+      <div class="status s-idle" id="adoStatus">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Enter your ADO PAT, fill in org/project/team, then click <strong>Connect</strong> to load available sprints.</span>
+      </div>
+    </div>
+
+    <div id="adoDash">
+      <div class="empty" style="padding:72px 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <p>Authenticate above to load the sprint dashboard</p>
+        <small>Connects to <code>dev.azure.com/{org}/{project}</code> for team <code>surePrep-tcd-elite</code></small>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ─── shared utils ─────────────────────────────── */
+const $=id=>document.getElementById(id);
+function toast(msg,ms=2800){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms)}
+function ago(d){if(!d)return '—';const s=(Date.now()-new Date(d))/1000;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';if(s<2592000)return Math.floor(s/86400)+'d ago';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function fmtDate(d){if(!d)return '';return new Date(d).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+function fmtShort(d){if(!d)return '';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function ini(n){return(n||'??').slice(0,2).toUpperCase()}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function stOf(pr){if(pr.pull_request?.merged_at||pr.merged_at)return 'merged';return pr.state||'open'}
+
+/* ─── tab switching ────────────────────────────── */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  $('tab-'+name).classList.add('active');
+  $('panel-'+name).classList.add('active');
+}
+
+/* ─── status helpers ───────────────────────────── */
+const SVGS={idle:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',ok:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',err:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',load:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'};
+function mkSt(elId,html,type='idle'){const el=$(elId);el.className='status s-'+(type==='loading'?'load':type);const sp=type==='loading'?' style="animation:rota .65s linear infinite"':'';el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${sp}>${SVGS[type==='loading'?'load':type]||SVGS.idle}</svg><span>${html}</span>`}
+function setSt(h,t){mkSt('statusEl',h,t)}
+function setProg(cur,tot,lbl){const w=$('progEl');if(!tot){w.style.display='none';return}w.style.display='block';const p=tot?Math.round((cur/tot)*100):0;$('progLbl').textContent=lbl||`Scanning ${cur} of ${tot}…`;$('progPct').textContent=p+'%';$('progFill').style.width=p+'%'}
+
+/* ═══════════════════════════════════════════════
+   GITHUB TAB
+═══════════════════════════════════════════════ */
+let ALL=[], FILT=[], PAGE=1, REPOS_META=[];
+const PG=25;
+
+async function ghFetch(url,token){
+  const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+  const d=await r.json();if(!r.ok)throw new Error(d.message||`HTTP ${r.status}`);return d;
+}
+async function ghPages(base,token){
+  let out=[],pg=1;
+  while(true){const sep=base.includes('?')?'&':'?';const d=await ghFetch(`${base}${sep}per_page=100&page=${pg}`,token);if(!Array.isArray(d)||!d.length)break;out.push(...d);if(d.length<100)break;pg++;}
+  return out;
+}
+
+async function connect(){
+  const token=$('tokInput').value.trim(),org=$('orgInp').value.trim(),pref=$('prefInp').value.trim(),label=$('lblInp').value.trim();
+  if(!token){setSt('Please enter a GitHub PAT.','err');return}
+  if(!org||!pref){setSt('Please fill in organisation and repo prefix.','err');return}
+  const btn=$('scanBtn');btn.disabled=true;$('scanLbl').innerHTML='<span class="spin"></span>&nbsp;Scanning…';
+  setSt(`Discovering <strong>${esc(pref)}*</strong> repos in <strong>${esc(org)}</strong>…`,'loading');
+  $('tbOrg').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> ${esc(org)}`;
+  $('tbRepos').style.display='none';$('tbPRs').style.display='none';ALL=[];REPOS_META=[];
+  try{
+    let repos=[];
+    try{repos=await ghPages(`https://api.github.com/orgs/${org}/repos?type=all`,token)}
+    catch{repos=await ghPages(`https://api.github.com/users/${org}/repos`,token)}
+    repos=repos.filter(r=>r.name.toLowerCase().startsWith(pref.toLowerCase()));
+    if(!repos.length){setSt(`No repos found starting with <strong>${esc(pref)}</strong> in <strong>${esc(org)}</strong>.`,'err');btn.disabled=false;$('scanLbl').innerHTML='Connect &amp; Scan';return}
+    REPOS_META=repos.map(r=>({name:r.name,full_name:r.full_name,description:r.description||'',language:r.language||'',default_branch:r.default_branch||'',visibility:r.private?'Private':'Public',stars:r.stargazers_count||0,forks:r.forks_count||0,open_issues:r.open_issues_count||0,created_at:r.created_at,updated_at:r.updated_at,pushed_at:r.pushed_at,url:r.html_url,topics:(r.topics||[]).join(', ')}));
+    $('tbRepos').style.display='';$('tbRepos').innerHTML=`${repos.length} repos`;
+    setSt(`Found <strong>${repos.length} repos</strong> — fetching PRs labelled <strong>"${esc(label)}"</strong>…`,'loading');
+    for(let i=0;i<repos.length;i++){
+      setProg(i+1,repos.length,`${repos[i].name}  (${i+1} / ${repos.length})`);
+      const prs=await ghPages(`https://api.github.com/repos/${repos[i].full_name}/pulls?state=all`,token);
+      prs.filter(pr=>pr.labels?.some(l=>l.name.toLowerCase()===label.toLowerCase())).forEach(pr=>ALL.push({...pr,_repo:repos[i].name,_full:repos[i].full_name}));
+    }
+    setTimeout(()=>setProg(0,0),400);
+    $('tbPRs').style.display='';$('tbPRs').innerHTML=`${ALL.length} PRs`;
+    setSt(`<strong>${ALL.length}</strong> PRs labelled <strong>"${esc(label)}"</strong> across <strong>${repos.length}</strong> repos`,'ok');
+    PAGE=1;renderDash(repos,label);
+    toast(`✓ Loaded ${ALL.length} PRs from ${repos.length} repos`);
+  }catch(e){setSt(`Error: ${esc(e.message)}`,'err');setProg(0,0)}
+  finally{btn.disabled=false;$('scanLbl').innerHTML='↺ Refresh'}
+}
+
+function toggleTok(){const i=$('tokInput'),s=$('eyeSvg'),show=i.type==='password';i.type=show?'text':'password';s.innerHTML=show?'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>':'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'}
+
+/* ── Excel helpers ── */
+const ICON_XLS=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+function xlsxHdr(ws,headers){headers.forEach((h,c)=>{const cell=XLSX.utils.encode_cell({r:0,c});ws[cell]={v:h,t:'s',s:{font:{bold:true,color:{rgb:'FFFFFF'},sz:10},fill:{fgColor:{rgb:'1254A0'}},alignment:{horizontal:'center',vertical:'center',wrapText:true}}}})}
+function autoWidth(ws,data,headers){ws['!cols']=headers.map((h,i)=>{const max=data.reduce((m,r)=>Math.max(m,String(r[i]??'').length),String(h).length);return{wch:Math.min(Math.max(max+2,10),60)}})}
+function freezeRow(ws){ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft'}}
+function addFilter(ws,n){ws['!autofilter']={ref:`A1:${XLSX.utils.encode_col(n-1)}1`}}
+
+function exportRepos(){
+  if(!REPOS_META.length){toast('⚠ No repo data — please scan first');return}
+  const headers=['Repository Name','Full Name','Description','Language','Default Branch','Visibility','Stars','Forks','Open Issues','Topics','Created','Last Updated','Last Push','GitHub URL'];
+  const rows=REPOS_META.map(r=>[r.name,r.full_name,r.description,r.language,r.default_branch,r.visibility,r.stars,r.forks,r.open_issues,r.topics,fmtDate(r.created_at),fmtDate(r.updated_at),fmtDate(r.pushed_at),r.url]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);xlsxHdr(ws,headers);autoWidth(ws,rows,headers);freezeRow(ws);addFilter(ws,headers.length);
+  XLSX.utils.book_append_sheet(wb,ws,'Repositories');
+  const langs={};REPOS_META.forEach(r=>{const l=r.language||'Unknown';langs[l]=(langs[l]||0)+1});
+  const sh=['Metric','Value'];const sr=[['Organisation',$('orgInp').value.trim()],['Total Repos',REPOS_META.length],['Report Generated',new Date().toLocaleString()],...Object.entries(langs).sort((a,b)=>b[1]-a[1]).map(([l,n])=>[l,n])];
+  const ws2=XLSX.utils.aoa_to_sheet([sh,...sr]);xlsxHdr(ws2,sh);ws2['!cols']=[{wch:30},{wch:25}];freezeRow(ws2);
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+  XLSX.writeFile(wb,`TaxCaddy_Repos_${new Date().toISOString().slice(0,10)}.xlsx`);toast(`✓ Exported ${REPOS_META.length} repos`);
+}
+function exportContributors(){
+  if(!ALL.length){toast('⚠ No PR data');return}
+  const byU={};ALL.forEach(pr=>{const u=pr.user.login;if(!byU[u])byU[u]={login:u,profile:`https://github.com/${u}`,total:0,open:0,merged:0,closed:0,repos:new Set()};const s=stOf(pr);byU[u].total++;byU[u][s]=(byU[u][s]||0)+1;byU[u].repos.add(pr._repo)});
+  const users=Object.values(byU).sort((a,b)=>b.total-a.total);
+  const headers=['Rank','GitHub Username','Profile URL','Total PRs','Open','Merged','Closed','Repos Contributed','Repositories'];
+  const rows=users.map((u,i)=>[i+1,u.login,u.profile,u.total,u.open||0,u.merged||0,u.closed||0,u.repos.size,[...u.repos].join(', ')]);
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);xlsxHdr(ws,headers);autoWidth(ws,rows,headers);freezeRow(ws);addFilter(ws,headers.length);
+  XLSX.utils.book_append_sheet(wb,ws,'Contributors');XLSX.writeFile(wb,`TaxCaddy_Contributors_${new Date().toISOString().slice(0,10)}.xlsx`);toast(`✓ Exported ${users.length} contributors`);
+}
+function exportAllPRs(){if(!ALL.length){toast('⚠ No PR data');return}exportPRData(ALL,'All_PRs')}
+function exportFilteredPRs(){if(!FILT.length){toast('⚠ No PRs in current filter');return}exportPRData(FILT,'Filtered_PRs')}
+function exportPRData(data,label){
+  const headers=['PR Number','Title','Repository','Author','State','Created','Updated','Merged At','Branch (from)','Branch (into)','Labels','PR URL'];
+  const rows=data.map(pr=>[pr.number,pr.title,pr._repo,pr.user.login,stOf(pr),fmtDate(pr.created_at),fmtDate(pr.updated_at),fmtDate(pr.pull_request?.merged_at||pr.merged_at||null),pr.head?.ref||'',pr.base?.ref||'',(pr.labels||[]).map(l=>l.name).join(', '),pr.html_url]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);xlsxHdr(ws,headers);autoWidth(ws,rows,headers);freezeRow(ws);addFilter(ws,headers.length);XLSX.utils.book_append_sheet(wb,ws,'Pull Requests');
+  const byR={};data.forEach(pr=>{if(!byR[pr._repo])byR[pr._repo]={repo:pr._repo,total:0,open:0,merged:0,closed:0,authors:new Set()};const s=stOf(pr);byR[pr._repo].total++;byR[pr._repo][s]=(byR[pr._repo][s]||0)+1;byR[pr._repo].authors.add(pr.user.login)});
+  const rh=['Repository','Total PRs','Open','Merged','Closed','Unique Authors'];const rr=Object.values(byR).sort((a,b)=>b.total-a.total).map(r=>[r.repo,r.total,r.open||0,r.merged||0,r.closed||0,r.authors.size]);
+  const ws2=XLSX.utils.aoa_to_sheet([rh,...rr]);xlsxHdr(ws2,rh);autoWidth(ws2,rr,rh);freezeRow(ws2);addFilter(ws2,rh.length);XLSX.utils.book_append_sheet(wb,ws2,'By Repository');
+  const byA={};data.forEach(pr=>{const u=pr.user.login;if(!byA[u])byA[u]={author:u,total:0,open:0,merged:0,closed:0,repos:new Set()};const s=stOf(pr);byA[u].total++;byA[u][s]=(byA[u][s]||0)+1;byA[u].repos.add(pr._repo)});
+  const ah=['Author','Total PRs','Open','Merged','Closed','Repos Contributed'];const ar=Object.values(byA).sort((a,b)=>b.total-a.total).map(a=>[a.author,a.total,a.open||0,a.merged||0,a.closed||0,a.repos.size]);
+  const ws3=XLSX.utils.aoa_to_sheet([ah,...ar]);xlsxHdr(ws3,ah);autoWidth(ws3,ar,ah);freezeRow(ws3);addFilter(ws3,ah.length);XLSX.utils.book_append_sheet(wb,ws3,'By Author');
+  XLSX.writeFile(wb,`TaxCaddy_${label}_${new Date().toISOString().slice(0,10)}.xlsx`);toast(`✓ Exported ${data.length} PRs`);
+}
+
+function toggleMenu(id){document.querySelectorAll('.exp-menu').forEach(m=>{if(m.id!==id)m.classList.remove('open')});$(id).classList.toggle('open')}
+document.addEventListener('click',e=>{if(!e.target.closest('.exp-wrap'))document.querySelectorAll('.exp-menu').forEach(m=>m.classList.remove('open'))});
+
+function renderDash(repos,label){
+  const open=ALL.filter(p=>stOf(p)==='open').length,merged=ALL.filter(p=>stOf(p)==='merged').length;
+  const byU={};ALL.forEach(pr=>{const u=pr.user.login;if(!byU[u])byU[u]={login:u,av:pr.user.avatar_url,n:0,repos:new Set()};byU[u].n++;byU[u].repos.add(pr._repo)});
+  const users=Object.values(byU).sort((a,b)=>b.n-a.n);
+  const byR={};ALL.forEach(pr=>{if(!byR[pr._repo])byR[pr._repo]={name:pr._repo,full:pr._full,n:0};byR[pr._repo].n++});
+  const rlist=Object.values(byR).sort((a,b)=>b.n-a.n);
+  const uOpts=users.map(u=>`<option value="${esc(u.login)}">${esc(u.login)} (${u.n})</option>`).join('');
+  const rOpts=rlist.map(r=>`<option value="${esc(r.name)}">${esc(r.name)} (${r.n})</option>`).join('');
+  const Rico=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>`;
+  $('dash').innerHTML=`
+  <div class="metrics">
+    <div class="mc"><div class="mc-lbl">Repos scanned</div><div class="mc-val" style="color:var(--blue)">${repos.length}</div><div class="mc-sub">prefix: ${esc($('prefInp').value.trim())}</div></div>
+    <div class="mc"><div class="mc-lbl">Total PRs</div><div class="mc-val">${ALL.length}</div><div class="mc-sub">label: "${esc(label)}"</div></div>
+    <div class="mc"><div class="mc-lbl">Open</div><div class="mc-val" style="color:var(--green)">${open}</div><div class="mc-sub">awaiting review</div></div>
+    <div class="mc"><div class="mc-lbl">Merged</div><div class="mc-val" style="color:var(--purple)">${merged}</div><div class="mc-sub">shipped</div></div>
+    <div class="mc"><div class="mc-lbl">Authors</div><div class="mc-val">${users.length}</div><div class="mc-sub">unique contributors</div></div>
+  </div>
+  <div class="sec-hd-row">
+    <div class="sec-hd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/></svg>Services with AI-generated PRs</div>
+    <div class="exp-wrap"><button class="btn btn-export" onclick="toggleMenu('menuRepos')">${ICON_XLS} Export Services <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="exp-menu" id="menuRepos"><div class="exp-menu-label">Export options</div>
+    <button class="exp-menu-item" onclick="exportRepos();toggleMenu('menuRepos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>All ${REPOS_META.length} Repos — Full Details<span style="font-size:10px;color:var(--txt3);margin-left:auto">2 sheets</span></button></div></div>
+  </div>
+  <div class="chips">${rlist.map(r=>`<div class="chip">${Rico}${esc(r.name)}<span class="cn">${r.n}</span></div>`).join('')}</div>
+  <div class="sec-hd-row">
+    <div class="sec-hd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contributors</div>
+    <div class="exp-wrap"><button class="btn btn-export" onclick="toggleMenu('menuContrib')">${ICON_XLS} Export Contributors <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="exp-menu" id="menuContrib"><div class="exp-menu-label">Export options</div>
+    <button class="exp-menu-item" onclick="exportContributors();toggleMenu('menuContrib')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contributors Summary<span style="font-size:10px;color:var(--txt3);margin-left:auto">1 sheet</span></button>
+    <div class="exp-menu-sep"></div>
+    <button class="exp-menu-item" onclick="exportAllPRs();toggleMenu('menuContrib')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>All ${ALL.length} PRs — Full Detail<span style="font-size:10px;color:var(--txt3);margin-left:auto">3 sheets</span></button></div></div>
+  </div>
+  <div class="ugrid">${users.map(u=>`<div class="uc"><div class="av">${u.av?`<img src="${esc(u.av)}" alt="${esc(u.login)}" loading="lazy"/>`:ini(u.login)}</div><div style="flex:1;min-width:0"><div class="un">${esc(u.login)}</div><div class="um"><span class="pill p-purple">${u.n} PR${u.n!==1?'s':''}</span><span style="color:var(--txt3)">${u.repos.size} repo${u.repos.size!==1?'s':''}</span></div></div></div>`).join('')}</div>
+  <div class="tcard">
+    <div class="ttbar">
+      <span class="ttitle">Pull Requests <span class="tcnt" id="cntEl">${ALL.length} results</span></span>
+      <input class="sinp" id="qInp" placeholder="Search…" oninput="refilter()"/>
+      <select class="fsel" id="rFil" onchange="refilter()"><option value="all">All services</option>${rOpts}</select>
+      <select class="fsel" id="sFil" onchange="refilter()"><option value="all">All states</option><option value="open">Open</option><option value="merged">Merged</option><option value="closed">Closed</option></select>
+      <select class="fsel" id="uFil" onchange="refilter()"><option value="all">All authors</option>${uOpts}</select>
+      <div class="exp-wrap"><button class="btn btn-export" onclick="toggleMenu('menuPRs')">${ICON_XLS} Export PRs <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="exp-menu" id="menuPRs"><div class="exp-menu-label">Export options</div>
+      <button class="exp-menu-item" onclick="exportAllPRs();toggleMenu('menuPRs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>All ${ALL.length} PRs (unfiltered)<span style="font-size:10px;color:var(--txt3);margin-left:auto">3 sheets</span></button>
+      <button class="exp-menu-item" onclick="exportFilteredPRs();toggleMenu('menuPRs')" id="filteredExpBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Current filtered view<span style="font-size:10px;color:var(--txt3);margin-left:auto" id="filteredCntExp">${ALL.length} PRs · 3 sheets</span></button>
+      <div class="exp-menu-sep"></div>
+      <button class="exp-menu-item" onclick="exportContributors();toggleMenu('menuPRs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contributors summary<span style="font-size:10px;color:var(--txt3);margin-left:auto">1 sheet</span></button>
+      <button class="exp-menu-item" onclick="exportRepos();toggleMenu('menuPRs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>All repos — full details<span style="font-size:10px;color:var(--txt3);margin-left:auto">2 sheets</span></button></div></div>
+    </div>
+    <div class="tcols thead-row" style="padding:9px 18px;background:var(--surf2);border-bottom:0.5px solid var(--bdr);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)">
+      <span>PR #</span><span>Title &amp; Service</span><span>Author</span><span>Repository</span><span>State</span><span>Opened</span><span>Updated</span>
+    </div>
+    <div id="tbody"></div>
+    <div class="tpag" id="tpag"></div>
+  </div>`;
+  refilter();
+}
+function refilter(){
+  PAGE=1;
+  const s=$('sFil')?.value||'all',u=$('uFil')?.value||'all',r=$('rFil')?.value||'all',q=($('qInp')?.value||'').toLowerCase();
+  FILT=ALL.filter(pr=>{if(s!=='all'&&stOf(pr)!==s)return false;if(u!=='all'&&pr.user.login!==u)return false;if(r!=='all'&&pr._repo!==r)return false;if(q&&!pr.title.toLowerCase().includes(q)&&!pr.user.login.toLowerCase().includes(q)&&!pr._repo.toLowerCase().includes(q))return false;return true});
+  const cnt=$('cntEl');if(cnt)cnt.textContent=`${FILT.length} result${FILT.length!==1?'s':''}`;
+  const fce=$('filteredCntExp');if(fce)fce.textContent=`${FILT.length} PRs · 3 sheets`;
+  renderRows();
+}
+function renderRows(){
+  const tot=Math.max(1,Math.ceil(FILT.length/PG));if(PAGE>tot)PAGE=tot;
+  const slice=FILT.slice((PAGE-1)*PG,PAGE*PG);
+  const SC={open:'p-green',closed:'p-red',merged:'p-purple'};const SL={open:'Open',closed:'Closed',merged:'Merged'};
+  $('tbody').innerHTML=slice.map(pr=>{const s=stOf(pr);const av=pr.user.avatar_url?`<img src="${esc(pr.user.avatar_url)}" alt="${esc(pr.user.login)}" loading="lazy" style="width:20px;height:20px;border-radius:50%;flex-shrink:0">`:`<div class="ainit" style="flex-shrink:0">${ini(pr.user.login)}</div>`;return `<div class="tr tcols"><div class="prnum"><a href="${esc(pr.html_url)}" target="_blank" rel="noopener">#${pr.number}</a></div><div style="min-width:0"><div class="prtitle" title="${esc(pr.title)}">${esc(pr.title)}</div></div><div class="prauth">${av}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px">${esc(pr.user.login)}</span></div><div class="prrepo">${esc(pr._repo)}</div><div><span class="pill ${SC[s]}">${SL[s]}</span></div><div class="prdate">${ago(pr.created_at)}</div><div class="prdate">${ago(pr.updated_at)}</div></div>`}).join('')||`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>No PRs match the current filters</p></div>`;
+  $('tpag').innerHTML=`<span>Page ${PAGE} of ${tot} · ${FILT.length} result${FILT.length!==1?'s':''}</span><div style="display:flex;gap:8px"><button class="btn" style="height:30px;font-size:12px;padding:0 13px" onclick="chPg(-1)" ${PAGE<=1?'disabled':''}>← Prev</button><button class="btn" style="height:30px;font-size:12px;padding:0 13px" onclick="chPg(1)" ${PAGE>=tot?'disabled':''}>Next →</button></div>`;
+}
+function chPg(d){const tot=Math.max(1,Math.ceil(FILT.length/PG));PAGE=Math.max(1,Math.min(tot,PAGE+d));renderRows()}
+
+/* ═══════════════════════════════════════════════
+   AZURE DEVOPS SPRINT TAB
+═══════════════════════════════════════════════ */
+let ADO_ITEMS=[], ADO_FILT=[], ADO_PAGE=1, ADO_SPRINT_INFO=null;
+const ADO_PG=30;
+
+function toggleAdoTok(){const i=$('adoTok'),s=$('adoEyeSvg'),show=i.type==='password';i.type=show?'text':'password';s.innerHTML=show?'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>':'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'}
+
+function adoHeaders(token){
+  const b64=btoa(':'+token);
+  return{Authorization:`Basic ${b64}`,'Content-Type':'application/json'};
+}
+
+async function adoFetch(url,token){
+  const proxy=($('adoProxy')?.value||'').trim();
+  let fetchUrl=url;
+  let headers=adoHeaders(token);
+  if(proxy){
+    // Route through Cloudflare worker proxy to bypass CORS
+    fetchUrl=`${proxy.replace(/\/$/,'')}?url=${encodeURIComponent(url)}`;
+  }
+  const r=await fetch(fetchUrl,{headers});
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    const msg=e.message||e.error||`HTTP ${r.status}`;
+    if(r.status===0||msg.includes('fetch'))throw new Error('Failed to fetch — if running on GitHub Pages, set the Proxy URL field to your Cloudflare Worker URL.');
+    throw new Error(msg+` — ${url}`);
+  }
+  return r.json();
+}
+
+/* ── Step 1: fetch sprint list and populate dropdown ── */
+let ADO_ALL_SPRINTS=[];
+
+async function adoFetchSprints(){
+  const token=$('adoTok').value.trim();
+  const org=$('adoOrg').value.trim();
+  const project=$('adoProject').value.trim();
+  const team=$('adoTeam').value.trim();
+  if(!token){mkSt('adoStatus','Please enter an ADO PAT.','err');return}
+  if(!org||!project||!team){mkSt('adoStatus','Please fill in Org, Project, and Team.','err');return}
+  const btn=$('adoConnectBtn');btn.disabled=true;$('adoConnectLbl').innerHTML='<span class="spin"></span>&nbsp;Connecting…';
+  mkSt('adoStatus','Fetching sprint list from Azure DevOps…','loading');
+  try{
+    const base=`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+    const sprintsUrl=`${base}/${encodeURIComponent(team)}/_apis/work/teamsettings/iterations?api-version=7.1`;
+    const sprintsData=await adoFetch(sprintsUrl,token);
+    ADO_ALL_SPRINTS=sprintsData.value||[];
+    if(!ADO_ALL_SPRINTS.length){mkSt('adoStatus','No sprints found. Check team name and project.','err');return}
+
+    /* Build dropdown — group by timeFrame */
+    const current=ADO_ALL_SPRINTS.filter(s=>s.attributes?.timeFrame==='current');
+    const past=[...ADO_ALL_SPRINTS.filter(s=>s.attributes?.timeFrame==='past')].reverse(); // most recent first
+    const future=ADO_ALL_SPRINTS.filter(s=>s.attributes?.timeFrame==='future');
+    const sel=$('adoSprintSel');
+    sel.innerHTML='';
+    const addGroup=(label,items)=>{
+      if(!items.length)return;
+      const grp=document.createElement('optgroup');grp.label=label;
+      items.forEach(s=>{
+        const o=document.createElement('option');
+        o.value=s.id;
+        const sd=s.attributes?.startDate?new Date(s.attributes.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+        const ed=s.attributes?.finishDate?new Date(s.attributes.finishDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+        o.textContent=`${s.name}${sd&&ed?' ('+sd+' – '+ed+')':''}`;
+        if(s.attributes?.timeFrame==='current')o.textContent+=' ★ Current';
+        grp.appendChild(o);
+      });
+      sel.appendChild(grp);
+    };
+    addGroup('▶ Current Sprint',current);
+    addGroup('⏮ Past Sprints',past);
+    addGroup('⏭ Future Sprints',future);
+
+    /* Auto-select current sprint */
+    const cur=current[0]||ADO_ALL_SPRINTS[0];
+    if(cur)sel.value=cur.id;
+
+    $('adoSprintRow').style.display='';
+    mkSt('adoStatus',`Found <strong>${ADO_ALL_SPRINTS.length} sprints</strong>. Current sprint pre-selected — or pick another, then click <strong>Load Sprint</strong>.`,'ok');
+    $('adoConnectLbl').innerHTML='↺ Refresh';
+  }catch(e){mkSt('adoStatus',`Error: ${esc(e.message)}`,'err')}
+  finally{btn.disabled=false}
+}
+
+/* ── Step 2: load work items for selected sprint ── */
+async function adoConnect(){
+  const token=$('adoTok').value.trim();
+  const org=$('adoOrg').value.trim();
+  const project=$('adoProject').value.trim();
+  const team=$('adoTeam').value.trim();
+  const sprintId=$('adoSprintSel').value;
+
+  if(!token){mkSt('adoStatus','Please enter an ADO PAT.','err');return}
+  if(!sprintId){mkSt('adoStatus','Please select a sprint from the dropdown.','err');return}
+
+  const sprint=ADO_ALL_SPRINTS.find(s=>s.id===sprintId);
+  if(!sprint){mkSt('adoStatus','Sprint not found — please click Connect again.','err');return}
+
+  const btn=$('adoScanBtn');btn.disabled=true;$('adoScanLbl').innerHTML='<span class="spin"></span>&nbsp;Loading…';
+  mkSt('adoStatus',`Loading work items for <strong>${esc(sprint.name)}</strong>…`,'loading');
+  ADO_ITEMS=[];ADO_SPRINT_INFO=null;
+
+  try{
+    const base=`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+
+    ADO_SPRINT_INFO={
+      name:sprint.name,id:sprint.id,
+      startDate:sprint.attributes?.startDate,
+      endDate:sprint.attributes?.finishDate,
+      timeFrame:sprint.attributes?.timeFrame||'unknown',
+      url:sprint.url
+    };
+
+    $('tbSprint').style.display='';$('tbSprint').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${esc(sprint.name)}`;
+
+    /* 1. Get work item IDs in this sprint */
+    const wiUrl=`${base}/${encodeURIComponent(team)}/_apis/work/teamsettings/iterations/${sprint.id}/workitems?api-version=7.1`;
+    const wiData=await adoFetch(wiUrl,token);
+    const wiIds=(wiData.workItemRelations||[]).map(r=>r.target?.id).filter(Boolean);
+
+    if(!wiIds.length){
+      mkSt('adoStatus',`Sprint <strong>${esc(sprint.name)}</strong> has no work items.`,'ok');
+      renderAdoDash([],sprint);
+      return;
+    }
+
+    mkSt('adoStatus',`Fetching details for <strong>${wiIds.length}</strong> work items…`,'loading');
+
+    /* 3. Batch-fetch work item details (max 200 per call) */
+    const fields=['System.Id','System.Title','System.WorkItemType','System.State','System.AssignedTo','System.AreaPath','Microsoft.VSTS.Scheduling.RemainingWork','Microsoft.VSTS.Scheduling.StoryPoints','Microsoft.VSTS.Scheduling.OriginalEstimate','System.CreatedDate','System.ChangedDate','System.Parent','System.Tags','System.IterationPath','System.Description'].join(',');
+    const allItems=[];
+    for(let i=0;i<wiIds.length;i+=200){
+      const batch=wiIds.slice(i,i+200);
+      const detailUrl=`https://dev.azure.com/${encodeURIComponent(org)}/_apis/wit/workitems?ids=${batch.join(',')}&fields=${fields}&api-version=7.1`;
+      const detailData=await adoFetch(detailUrl,token);
+      allItems.push(...(detailData.value||[]));
+    }
+    ADO_ITEMS=allItems.map(wi=>({
+      id:wi.id,
+      title:wi.fields['System.Title']||'',
+      type:wi.fields['System.WorkItemType']||'',
+      state:wi.fields['System.State']||'',
+      assignedTo:wi.fields['System.AssignedTo']?.displayName||wi.fields['System.AssignedTo']||'Unassigned',
+      areaPath:wi.fields['System.AreaPath']||'',
+      remaining:wi.fields['Microsoft.VSTS.Scheduling.RemainingWork']||0,
+      storyPoints:wi.fields['Microsoft.VSTS.Scheduling.StoryPoints']||0,
+      originalEst:wi.fields['Microsoft.VSTS.Scheduling.OriginalEstimate']||0,
+      createdDate:wi.fields['System.CreatedDate']||'',
+      changedDate:wi.fields['System.ChangedDate']||'',
+      parent:wi.fields['System.Parent']||null,
+      tags:wi.fields['System.Tags']||'',
+      iterationPath:wi.fields['System.IterationPath']||'',
+      url:`https://dev.azure.com/${org}/${project}/_workitems/edit/${wi.id}`
+    }));
+
+    mkSt('adoStatus',`<strong>${ADO_ITEMS.length}</strong> work items loaded for sprint <strong>${esc(sprint.name)}</strong>`,'ok');
+    ADO_PAGE=1;renderAdoDash(ADO_ITEMS,sprint);
+    toast(`✓ Sprint loaded: ${ADO_ITEMS.length} items`);
+  }catch(e){
+    mkSt('adoStatus',`Error: ${esc(e.message)}`,'err');
+    console.error(e);
+  }finally{
+    btn.disabled=false;$('adoScanLbl').innerHTML='↺ Refresh';
+  }
+}
+
+/* ── ADO state/type styling ── */
+function stateClass(s){const m={'Active':'st-active','In Progress':'st-active','New':'st-new','Ready':'st-new','Resolved':'st-resolved','Closed':'st-closed','Done':'st-closed','Removed':'st-removed'};return m[s]||'st-new'}
+function typeClass(t){const m={'Bug':'wi-bug','Task':'wi-task','User Story':'wi-story','Feature':'wi-feature','Epic':'wi-epic'};return m[t]||'wi-task'}
+function typeIcon(t){
+  const icons={
+    'Bug':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    'Task':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+    'User Story':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    'Feature':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    'Epic':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-2 2.5h3L12 7"/><path d="M10 14v-3"/><path d="M14 14v-3"/><path d="M11 19c-1.7 0-3-1.3-3-3v-2h8v2c0 1.7-1.3 3-3 3z"/><path d="M12 22v-3"/></svg>'
+  };
+  return icons[t]||icons['Task'];
+}
+function daysLeft(endDate){
+  if(!endDate)return null;
+  const d=Math.ceil((new Date(endDate)-new Date())/(1000*60*60*24));
+  return d;
+}
+
+/* ── Render ADO Dashboard ── */
+function renderAdoDash(items,sprint){
+  const total=items.length;
+  const byState={};items.forEach(i=>{byState[i.state]=(byState[i.state]||0)+1});
+  const active=(byState['Active']||0)+(byState['In Progress']||0);
+  const newItems=(byState['New']||0)+(byState['Ready']||0);
+  const resolved=(byState['Resolved']||0);
+  const closed=(byState['Closed']||0)+(byState['Done']||0);
+  const totalSP=items.reduce((s,i)=>s+(i.storyPoints||0),0);
+  const totalRem=items.reduce((s,i)=>s+(i.remaining||0),0);
+  const dl=daysLeft(sprint.endDate);
+  const dlTxt=dl===null?'—':dl<0?`${Math.abs(dl)}d overdue`:dl===0?'Ends today':`${dl}d left`;
+  const dlColor=dl===null?'var(--txt3)':dl<0?'var(--red)':dl<=3?'var(--amber)':'var(--green)';
+
+  /* By member */
+  const byMember={};
+  items.forEach(i=>{
+    const m=i.assignedTo||'Unassigned';
+    if(!byMember[m])byMember[m]={name:m,total:0,active:0,new:0,resolved:0,closed:0,sp:0,rem:0};
+    byMember[m].total++;
+    const sl=i.state.toLowerCase();
+    if(sl==='active'||sl==='in progress')byMember[m].active++;
+    else if(sl==='new'||sl==='ready')byMember[m].new++;
+    else if(sl==='resolved')byMember[m].resolved++;
+    else if(sl==='closed'||sl==='done')byMember[m].closed++;
+    byMember[m].sp+=i.storyPoints||0;
+    byMember[m].rem+=i.remaining||0;
+  });
+  const members=Object.values(byMember).sort((a,b)=>b.total-a.total);
+
+  /* Filter options */
+  const stateOpts=[...new Set(items.map(i=>i.state))].sort().map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  const memberOpts=members.map(m=>`<option value="${esc(m.name)}">${esc(m.name)} (${m.total})</option>`).join('');
+  const typeOpts=[...new Set(items.map(i=>i.type))].sort().map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+
+  $('adoDash').innerHTML=`
+  <!-- Sprint Banner -->
+  <div class="sprint-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <div>
+      <div class="sprint-name">${esc(sprint.name)}</div>
+      <div class="sprint-dates">${fmtShort(sprint.startDate)} — ${fmtShort(sprint.endDate)} &nbsp;·&nbsp; ${esc($('adoOrg').value.trim())} / ${esc($('adoProject').value.trim())} / ${esc($('adoTeam').value.trim())}</div>
+    </div>
+    <span class="sprint-days" style="color:${dlColor};background:${dl!==null&&dl<0?'var(--redbg)':dl!==null&&dl<=3?'var(--amberbg)':'var(--greenbg)'}">${dlTxt}</span>
+    <div style="flex:1"></div>
+    <div class="exp-wrap">
+      <button class="btn btn-export" onclick="toggleMenu('menuAdo')">${ICON_XLS} Export Sprint <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="exp-menu" id="menuAdo">
+        <div class="exp-menu-label">Export options</div>
+        <button class="exp-menu-item" onclick="exportAdoAll();toggleMenu('menuAdo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>All Work Items — Full Detail<span style="font-size:10px;color:var(--txt3);margin-left:auto">3 sheets</span></button>
+        <button class="exp-menu-item" onclick="exportAdoFiltered();toggleMenu('menuAdo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Current filtered view<span style="font-size:10px;color:var(--txt3);margin-left:auto" id="adoFiltExp">${items.length} items · 3 sheets</span></button>
+        <div class="exp-menu-sep"></div>
+        <button class="exp-menu-item" onclick="exportAdoByMember();toggleMenu('menuAdo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team Member Summary<span style="font-size:10px;color:var(--txt3);margin-left:auto">1 sheet</span></button>
+      </div>
+    </div>
+    <button class="btn" style="height:34px;font-size:12px" onclick="adoConnect()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Reload Items</button>
+    <button class="btn" style="height:34px;font-size:12px" onclick="adoFetchSprints()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Change Sprint</button>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics6">
+    <div class="mc"><div class="mc-lbl">Total Items</div><div class="mc-val">${total}</div><div class="mc-sub">in sprint</div></div>
+    <div class="mc"><div class="mc-lbl">Active</div><div class="mc-val" style="color:var(--green)">${active}</div><div class="mc-sub">in progress</div></div>
+    <div class="mc"><div class="mc-lbl">New / Ready</div><div class="mc-val" style="color:var(--blue)">${newItems}</div><div class="mc-sub">not started</div></div>
+    <div class="mc"><div class="mc-lbl">Resolved</div><div class="mc-val" style="color:var(--purple)">${resolved}</div><div class="mc-sub">awaiting verify</div></div>
+    <div class="mc"><div class="mc-lbl">Closed / Done</div><div class="mc-val" style="color:var(--txt2)">${closed}</div><div class="mc-sub">completed</div></div>
+    <div class="mc"><div class="mc-lbl">Story Points</div><div class="mc-val" style="color:var(--teal)">${totalSP}</div><div class="mc-sub">${totalRem}h remaining</div></div>
+  </div>
+
+  <!-- Team Member Cards -->
+  <div class="sec-hd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team Members</div>
+  <div class="member-grid">
+    ${members.map(m=>`<div class="mcard" onclick="filterByMember('${esc(m.name)}')" title="Click to filter items for ${esc(m.name)}">
+      <div class="mcard-name">${esc(m.name)}</div>
+      <div class="mcard-stats">
+        <div class="mstat"><div class="mstat-val" style="color:var(--green)">${m.active}</div><div class="mstat-lbl">Active</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--blue)">${m.new}</div><div class="mstat-lbl">New</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--purple)">${m.resolved}</div><div class="mstat-lbl">Resolved</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--txt2)">${m.closed}</div><div class="mstat-lbl">Closed</div></div>
+        ${m.sp?`<div class="mstat"><div class="mstat-val" style="color:var(--teal)">${m.sp}</div><div class="mstat-lbl">SP</div></div>`:''}
+        ${m.rem?`<div class="mstat"><div class="mstat-val" style="color:var(--amber)">${m.rem}h</div><div class="mstat-lbl">Rem</div></div>`:''}
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <!-- Work Items Table -->
+  <div class="tcard">
+    <div class="ttbar">
+      <span class="ttitle">Work Items <span class="tcnt" id="adoCntEl">${total} items</span></span>
+      <input class="sinp" id="adoQInp" placeholder="Search title / assigned…" oninput="adoRefilter()"/>
+      <select class="fsel" id="adoTypeFil" onchange="adoRefilter()"><option value="all">All types</option>${typeOpts}</select>
+      <select class="fsel" id="adoStateFil" onchange="adoRefilter()"><option value="all">All states</option>${stateOpts}</select>
+      <select class="fsel" id="adoMemberFil" onchange="adoRefilter()"><option value="all">All members</option>${memberOpts}</select>
+    </div>
+    <div class="ado-cols thead-row" id="adoTheadRow" style="padding:9px 18px;background:var(--surf2);border-bottom:0.5px solid var(--bdr);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3)">
+      <span>ID</span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-title" onclick="toggleColFilter('title',event)">Title <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-title"></div></div></span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-state" onclick="toggleColFilter('state',event)">State <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-state"></div></div></span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-assignedTo" onclick="toggleColFilter('assignedTo',event)">Assigned To <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-assignedTo"></div></div></span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-type" onclick="toggleColFilter('type',event)">Type <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-type"></div></div></span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-storyPoints" onclick="toggleColFilter('storyPoints',event)">Story Pts <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-storyPoints"></div></div></span>
+      <span><div class="col-filter-wrap"><div class="col-hd" id="chd-remaining" onclick="toggleColFilter('remaining',event)">Remaining <svg class="sort-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div><div class="col-filter-panel" id="cfp-remaining"></div></div></span>
+    </div>
+    <div id="adoTbody"></div>
+    <div class="tpag" id="adoTpag"></div>
+  </div>`;
+
+  adoRefilter();
+}
+
+function filterByMember(name){
+  // Set toolbar dropdown
+  const sel=$('adoMemberFil');if(sel){sel.value=name;}
+  // Also set column filter
+  if(name==='all'){
+    COL_FILTERS['assignedTo']=null;
+  } else {
+    COL_FILTERS['assignedTo']=new Set([name]);
+  }
+  adoRefilter();
+  updateColFilterUI();
+  document.getElementById('adoTbody')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ══ Column filter state ══ */
+// key = field name, value = Set of selected values (null = all)
+let COL_FILTERS={title:null,state:null,assignedTo:null,type:null,storyPoints:null,remaining:null};
+
+/* Get display value for a field */
+function colVal(i,field){
+  if(field==='title')return i.title||'';
+  if(field==='state')return i.state||'';
+  if(field==='assignedTo')return i.assignedTo||'Unassigned';
+  if(field==='type')return i.type||'';
+  if(field==='storyPoints')return i.storyPoints!=null&&i.storyPoints!==0?String(i.storyPoints):'—';
+  if(field==='remaining')return i.remaining&&i.remaining>0?i.remaining+'h':'—';
+  return '';
+}
+
+/* Build and open a column filter panel */
+function toggleColFilter(field, e){
+  e.stopPropagation();
+  // Close all other panels
+  document.querySelectorAll('.col-filter-panel').forEach(p=>{
+    if(p.id!=='cfp-'+field) p.classList.remove('open');
+  });
+  const panel=$('cfp-'+field);
+  if(panel.classList.contains('open')){panel.classList.remove('open');return;}
+
+  // Build unique values from ALL items (not filtered) so you can always see all options
+  const allVals=[...new Set(ADO_ITEMS.map(i=>colVal(i,field)))].sort((a,b)=>{
+    // numeric sort for sp/remaining
+    const na=parseFloat(a),nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb))return na-nb;
+    return a.localeCompare(b);
+  });
+  const active=COL_FILTERS[field];
+  const countActive=ADO_ITEMS.filter(i=>active?active.has(colVal(i,field)):true).length;
+
+  panel.innerHTML=`
+    <div class="col-filter-count">${allVals.length} unique value${allVals.length!==1?'s':''} · ${countActive} matching item${countActive!==1?'s':''}</div>
+    <input class="col-filter-search" placeholder="Search values…" oninput="filterColOptions(this,'cfp-${field}')" id="cfs-${field}"/>
+    <div class="col-filter-list" id="cfl-${field}">
+      ${allVals.map(v=>{
+        const checked=!active||active.has(v);
+        const cnt=ADO_ITEMS.filter(i=>colVal(i,field)===v).length;
+        const itemCls=checked?'checked':'';
+        const vEsc=esc(v);
+        return '<label class="col-filter-item '+itemCls+'">'
+          +'<input type="checkbox" value="'+vEsc+'" '+(checked?'checked':'')+' onchange="colCheckChange(\''+field+'\')" />'
+          +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+vEsc+'">'+vEsc+'</span>'
+          +'<span style="font-size:10px;color:var(--txt3);flex-shrink:0">'+cnt+'</span>'
+          +'</label>';
+      }).join('')}
+    </div>
+    <div class="col-filter-footer">
+      <button class="cf-clear" onclick="clearColFilter('${field}')">Clear</button>
+      <button class="cf-apply" onclick="applyColFilter('${field}')">Apply</button>
+    </div>`;
+  panel.classList.add('open');
+  $('cfs-'+field)?.focus();
+}
+
+function filterColOptions(inp, panelId){
+  const q=inp.value.toLowerCase();
+  document.querySelectorAll('#'+panelId+' .col-filter-item').forEach(item=>{
+    const txt=item.querySelector('span')?.textContent.toLowerCase()||'';
+    item.style.display=txt.includes(q)?'':'none';
+  });
+}
+
+function colCheckChange(field){
+  // live-update the checked class
+  const list=$('cfl-'+field);
+  if(!list)return;
+  list.querySelectorAll('.col-filter-item').forEach(item=>{
+    const cb=item.querySelector('input[type=checkbox]');
+    item.classList.toggle('checked',cb?.checked||false);
+  });
+}
+
+function applyColFilter(field){
+  const panel=$('cfp-'+field);
+  const checked=[...panel.querySelectorAll('input[type=checkbox]:checked')].map(cb=>cb.value);
+  const all=[...panel.querySelectorAll('input[type=checkbox]')].map(cb=>cb.value);
+  // If all checked or none checked → treat as no filter
+  if(checked.length===0||checked.length===all.length){
+    COL_FILTERS[field]=null;
+  } else {
+    COL_FILTERS[field]=new Set(checked);
+  }
+  panel.classList.remove('open');
+  updateColFilterUI();
+  adoRefilter();
+}
+
+function clearColFilter(field){
+  COL_FILTERS[field]=null;
+  $('cfp-'+field)?.classList.remove('open');
+  updateColFilterUI();
+  adoRefilter();
+}
+
+function updateColFilterUI(){
+  Object.keys(COL_FILTERS).forEach(field=>{
+    const hd=$('chd-'+field);
+    if(!hd)return;
+    if(COL_FILTERS[field]&&COL_FILTERS[field].size>0){
+      hd.classList.add('filtered');
+      // show count badge in header
+      let badge=hd.querySelector('.cf-badge');
+      if(!badge){badge=document.createElement('span');badge.className='cf-badge';badge.style.cssText='background:var(--blue);color:#fff;border-radius:99px;padding:0px 5px;font-size:9px;font-weight:800;margin-left:2px';hd.insertBefore(badge,hd.querySelector('.sort-ico'));}
+      badge.textContent=COL_FILTERS[field].size;
+    } else {
+      hd.classList.remove('filtered');
+      hd.querySelector('.cf-badge')?.remove();
+    }
+  });
+}
+
+/* Close panels on outside click */
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.col-filter-wrap')&&!e.target.closest('.exp-wrap')){
+    document.querySelectorAll('.col-filter-panel').forEach(p=>p.classList.remove('open'));
+    document.querySelectorAll('.exp-menu').forEach(m=>m.classList.remove('open'));
+  }
+});
+
+function adoRefilter(){
+  ADO_PAGE=1;
+  // toolbar filters
+  const tbState=$('adoStateFil')?.value||'all';
+  const tbMember=$('adoMemberFil')?.value||'all';
+  const tbType=$('adoTypeFil')?.value||'all';
+  const q=($('adoQInp')?.value||'').toLowerCase();
+
+  ADO_FILT=ADO_ITEMS.filter(i=>{
+    // toolbar dropdowns
+    if(tbState!=='all'&&i.state!==tbState)return false;
+    if(tbMember!=='all'&&i.assignedTo!==tbMember)return false;
+    if(tbType!=='all'&&i.type!==tbType)return false;
+    if(q&&!i.title.toLowerCase().includes(q)&&!i.assignedTo.toLowerCase().includes(q))return false;
+    // column header filters
+    for(const [field,vals] of Object.entries(COL_FILTERS)){
+      if(!vals||vals.size===0)continue;
+      if(!vals.has(colVal(i,field)))return false;
+    }
+    return true;
+  });
+  const cnt=$('adoCntEl');if(cnt)cnt.textContent=`${ADO_FILT.length} item${ADO_FILT.length!==1?'s':''}`;
+  const fce=$('adoFiltExp');if(fce)fce.textContent=`${ADO_FILT.length} items · 3 sheets`;
+  adoRenderRows();
+}
+
+function adoRenderRows(){
+  const tot=Math.max(1,Math.ceil(ADO_FILT.length/ADO_PG));
+  if(ADO_PAGE>tot)ADO_PAGE=tot;
+  const slice=ADO_FILT.slice((ADO_PAGE-1)*ADO_PG,ADO_PAGE*ADO_PG);
+
+  // highlight active col-filter fields in rows
+  const activeFields=Object.entries(COL_FILTERS).filter(([,v])=>v&&v.size>0).map(([k])=>k);
+
+  function hlField(val,field){
+    if(!activeFields.includes(field))return esc(val);
+    return `<mark style="background:rgba(18,84,160,.15);border-radius:2px;padding:0 2px">${esc(val)}</mark>`;
+  }
+
+  $('adoTbody').innerHTML=slice.map(i=>`
+    <div class="tr ado-cols">
+      <div><a href="${esc(i.url)}" target="_blank" rel="noopener" style="color:var(--blue);font-weight:700;font-size:11px;font-family:monospace">${i.id}</a></div>
+      <div style="min-width:0">
+        <div class="prtitle" title="${esc(i.title)}">${hlField(i.title,'title')}</div>
+        ${i.tags?`<div style="font-size:10px;color:var(--txt3);margin-top:1px">${esc(i.tags)}</div>`:''}
+      </div>
+      <div><span class="pill ${stateClass(i.state)}" style="font-size:11px">${esc(i.state)}</span></div>
+      <div style="font-size:12px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hlField(i.assignedTo,'assignedTo')}</div>
+      <div><span class="${typeClass(i.type)}" style="display:flex;align-items:center;gap:4px;font-size:12px">${typeIcon(i.type)}${esc(i.type)}</span></div>
+      <div style="font-size:12px;color:var(--teal);font-weight:600">${i.storyPoints||'—'}</div>
+      <div style="font-size:12px;color:${i.remaining>0?'var(--amber)':'var(--txt3)'};font-weight:${i.remaining>0?'600':'400'}">${i.remaining?i.remaining+'h':'—'}</div>
+    </div>`).join('')||`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>No items match the current filters</p></div>`;
+
+  // Active filters summary bar
+  const activeFiltersList=[];
+  const tbState=$('adoStateFil')?.value;if(tbState&&tbState!=='all')activeFiltersList.push(`State: ${tbState}`);
+  const tbMember=$('adoMemberFil')?.value;if(tbMember&&tbMember!=='all')activeFiltersList.push(`Member: ${tbMember}`);
+  const tbType=$('adoTypeFil')?.value;if(tbType&&tbType!=='all')activeFiltersList.push(`Type: ${tbType}`);
+  const q=$('adoQInp')?.value;if(q)activeFiltersList.push(`Search: "${q}"`);
+  Object.entries(COL_FILTERS).forEach(([field,vals])=>{if(vals&&vals.size>0)activeFiltersList.push(`${field}: ${[...vals].join(', ')}`)});
+
+  const filterBar=activeFiltersList.length>0?`<div style="padding:7px 18px;background:var(--amberbg);border-bottom:0.5px solid var(--bdr);font-size:11px;color:var(--amber);display:flex;align-items:center;gap:10px;flex-wrap:wrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg><span><strong>Active filters:</strong> ${activeFiltersList.map(f=>`<span style="background:var(--surf);border:0.5px solid var(--bdr2);border-radius:4px;padding:1px 6px;margin-right:4px">${esc(f)}</span>`).join('')}</span><button onclick="clearAllAdoFilters()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:11px;font-weight:700;color:var(--red);padding:0">✕ Clear all</button></div>`:'';
+
+  $('adoTpag').innerHTML=`${filterBar}<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;font-size:12px;color:var(--txt2)"><span>Page ${ADO_PAGE} of ${tot} · ${ADO_FILT.length} item${ADO_FILT.length!==1?'s':''}</span><div style="display:flex;gap:8px"><button class="btn" style="height:30px;font-size:12px;padding:0 13px" onclick="adoChPg(-1)" ${ADO_PAGE<=1?'disabled':''}>← Prev</button><button class="btn" style="height:30px;font-size:12px;padding:0 13px" onclick="adoChPg(1)" ${ADO_PAGE>=tot?'disabled':''}>Next →</button></div></div>`;
+}
+
+function clearAllAdoFilters(){
+  COL_FILTERS={title:null,state:null,assignedTo:null,type:null,storyPoints:null,remaining:null};
+  const sel=['adoStateFil','adoMemberFil','adoTypeFil'];
+  sel.forEach(id=>{const e=$(id);if(e)e.value='all';});
+  const qi=$('adoQInp');if(qi)qi.value='';
+  updateColFilterUI();
+  adoRefilter();
+  toast('✓ All filters cleared');
+}
+
+function adoChPg(d){const tot=Math.max(1,Math.ceil(ADO_FILT.length/ADO_PG));ADO_PAGE=Math.max(1,Math.min(tot,ADO_PAGE+d));adoRenderRows()}
+
+/* ── ADO Excel Exports ── */
+function adoItemRows(data){
+  return data.map(i=>[i.id,i.title,i.type,i.state,i.assignedTo,i.storyPoints||0,i.remaining||0,i.originalEst||0,i.areaPath,i.tags,fmtDate(i.createdDate),fmtDate(i.changedDate),i.url]);
+}
+function exportAdoAll(){
+  if(!ADO_ITEMS.length){toast('⚠ No sprint data');return}
+  exportAdoData(ADO_ITEMS,'Sprint_All');
+}
+function exportAdoFiltered(){
+  if(!ADO_FILT.length){toast('⚠ No items in current filter');return}
+  exportAdoData(ADO_FILT,'Sprint_Filtered');
+}
+function exportAdoData(data,label){
+  const sn=ADO_SPRINT_INFO?.name||'Sprint';
+  const wb=XLSX.utils.book_new();
+
+  /* Sheet 1 — Work Items */
+  const headers=['ID','Title','Type','State','Assigned To','Story Points','Remaining (h)','Original Est (h)','Area Path','Tags','Created','Last Changed','ADO URL'];
+  const rows=adoItemRows(data);
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);xlsxHdr(ws,headers);autoWidth(ws,rows,headers);freezeRow(ws);addFilter(ws,headers.length);
+  XLSX.utils.book_append_sheet(wb,ws,'Work Items');
+
+  /* Sheet 2 — By Member */
+  const byM={};data.forEach(i=>{const m=i.assignedTo;if(!byM[m])byM[m]={name:m,total:0,active:0,new:0,resolved:0,closed:0,sp:0,rem:0};byM[m].total++;const sl=i.state.toLowerCase();if(sl==='active'||sl==='in progress')byM[m].active++;else if(sl==='new'||sl==='ready')byM[m].new++;else if(sl==='resolved')byM[m].resolved++;else if(sl==='closed'||sl==='done')byM[m].closed++;byM[m].sp+=i.storyPoints||0;byM[m].rem+=i.remaining||0});
+  const mh=['Member','Total','Active','New/Ready','Resolved','Closed/Done','Story Points','Remaining (h)'];
+  const mr=Object.values(byM).sort((a,b)=>b.total-a.total).map(m=>[m.name,m.total,m.active,m.new,m.resolved,m.closed,m.sp,m.rem]);
+  const ws2=XLSX.utils.aoa_to_sheet([mh,...mr]);xlsxHdr(ws2,mh);autoWidth(ws2,mr,mh);freezeRow(ws2);addFilter(ws2,mh.length);
+  XLSX.utils.book_append_sheet(wb,ws2,'By Member');
+
+  /* Sheet 3 — Summary */
+  const sh=['Metric','Value'];
+  const total=data.length;
+  const active=data.filter(i=>['active','in progress'].includes(i.state.toLowerCase())).length;
+  const newI=data.filter(i=>['new','ready'].includes(i.state.toLowerCase())).length;
+  const resolved=data.filter(i=>i.state.toLowerCase()==='resolved').length;
+  const closed=data.filter(i=>['closed','done'].includes(i.state.toLowerCase())).length;
+  const sr=[
+    ['Sprint',sn],['Start Date',fmtDate(ADO_SPRINT_INFO?.startDate)],['End Date',fmtDate(ADO_SPRINT_INFO?.endDate)],
+    ['Organisation',$('adoOrg').value.trim()],['Project',$('adoProject').value.trim()],['Team',$('adoTeam').value.trim()],
+    [''],['Total Items',total],['Active',active],['New / Ready',newI],['Resolved',resolved],['Closed / Done',closed],
+    ['Total Story Points',data.reduce((s,i)=>s+(i.storyPoints||0),0)],
+    ['Total Remaining (h)',data.reduce((s,i)=>s+(i.remaining||0),0)],
+    ['Report Generated',new Date().toLocaleString()]
+  ];
+  const ws3=XLSX.utils.aoa_to_sheet([sh,...sr]);xlsxHdr(ws3,sh);ws3['!cols']=[{wch:28},{wch:30}];freezeRow(ws3);
+  XLSX.utils.book_append_sheet(wb,ws3,'Summary');
+
+  XLSX.writeFile(wb,`TaxCaddy_${label}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast(`✓ Exported ${data.length} work items (3 sheets)`);
+}
+function exportAdoByMember(){
+  if(!ADO_ITEMS.length){toast('⚠ No sprint data');return}
+  const byM={};ADO_ITEMS.forEach(i=>{const m=i.assignedTo;if(!byM[m])byM[m]={name:m,total:0,active:0,new:0,resolved:0,closed:0,sp:0,rem:0,items:[]};byM[m].total++;const sl=i.state.toLowerCase();if(sl==='active'||sl==='in progress')byM[m].active++;else if(sl==='new'||sl==='ready')byM[m].new++;else if(sl==='resolved')byM[m].resolved++;else if(sl==='closed'||sl==='done')byM[m].closed++;byM[m].sp+=i.storyPoints||0;byM[m].rem+=i.remaining||0;byM[m].items.push(i)});
+  const mh=['Member','Total','Active','New/Ready','Resolved','Closed/Done','Story Points','Remaining (h)'];
+  const mr=Object.values(byM).sort((a,b)=>b.total-a.total).map(m=>[m.name,m.total,m.active,m.new,m.resolved,m.closed,m.sp,m.rem]);
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([mh,...mr]);xlsxHdr(ws,mh);autoWidth(ws,mr,mh);freezeRow(ws);addFilter(ws,mh.length);
+  XLSX.utils.book_append_sheet(wb,ws,'Team Summary');
+  XLSX.writeFile(wb,`TaxCaddy_Team_Summary_${new Date().toISOString().slice(0,10)}.xlsx`);toast(`✓ Exported team summary`);
+}
+</script>
+</body>
+</html>
