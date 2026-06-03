@@ -1,74 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PR Tracking Dashboard</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="description" content="TaxCaddy Team Dashboard — GitHub AI Generated PRs & Azure DevOps Sprint Monitor"/>
+  <meta property="og:title" content="TaxCaddy Team Dashboard"/>
+  <meta property="og:description" content="Monitor AI Generated PRs across all a208548_ services and track sprint work items for the surePrep-tcd-elite team."/>
+  <title>TaxCaddy Team Dashboard</title>
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0b1220;
-  color: white;
-}
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-.container {
-  padding: 40px;
-  text-align: center;
-}
-
-h1 {
-  font-size: 42px;
-  margin-bottom: 10px;
-}
-
-p {
-  color: #9fb2d1;
-}
-
-.card {
-  background: #172033;
-  padding: 20px;
-  margin-top: 20px;
-  border-radius: 12px;
-}
-
-button {
-  padding: 10px 20px;
-  margin-top: 20px;
-  border: none;
-  border-radius: 8px;
-  background: #4cc9f0;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-}
-</style>
+  <!-- Dashboard styles -->
+  <link rel="stylesheet" href="assets/css/dashboard.css"/>
 </head>
-
 <body>
 
-<div class="container">
-
-<h1>🚀 PR Tracking Dashboard</h1>
-<p>AI Generated Pull Request Tracking (TaxCaddy)</p>
-
-<div class="card">
-  <h2>Status</h2>
-  <p>✅ Deployment working</p>
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="#" class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    </div>
+    TaxCaddy Team Dashboard
+  </a>
+  <div class="tb-sep"></div>
+  <span class="tb-sub">Thomson Reuters · TaxProf</span>
+  <div class="tb-space"></div>
+  <span class="pill p-blue" id="tbOrg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>tr</span>
+  <span class="pill p-gray" id="tbRepos" style="display:none">0 repos</span>
+  <span class="pill p-purple" id="tbPRs" style="display:none">0 PRs</span>
+  <span class="pill p-teal" id="tbSprint" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    No sprint
+  </span>
 </div>
 
-<div class="card">
-  <h2>Next Step</h2>
-  <p>Integrate GitHub API for live PR data</p>
+<!-- TAB NAV -->
+<div class="tabnav">
+  <button class="tab active" onclick="switchTab('gh')" id="tab-gh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    GitHub · AI Generated PRs
+  </button>
+  <button class="tab" onclick="switchTab('ado')" id="tab-ado">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Azure DevOps · Sprint Monitor
+  </button>
 </div>
 
-<button onclick="alert('Dashboard ready ✅')">
-  Test Action
-</button>
+<!-- MAIN CONTENT -->
+<div class="wrap">
 
-</div>
+  <!-- ══════════ TAB 1: GITHUB ══════════ -->
+  <div class="tab-panel active" id="panel-gh">
+    <div class="acard">
+      <div class="acard-top">
+        <div class="acard-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div>
+          <div class="acard-title">GitHub Authentication</div>
+          <div class="acard-desc">PAT with <code>repo</code> scope — calls go directly to <code>api.github.com</code>. Token is never stored. &nbsp;<a href="https://github.com/settings/tokens/new?scopes=repo&description=PR+Dashboard" target="_blank">Generate token ↗</a></div>
+        </div>
+      </div>
+      <div class="trow">
+        <div class="fg">
+          <label>Personal Access Token (PAT)</label>
+          <input type="password" id="tokInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')connect()"/>
+        </div>
+        <button class="btn btn-icon" onclick="toggleTok()" title="Show/hide token">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="eyeSvg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-primary" id="scanBtn" onclick="connect()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span id="scanLbl">Connect &amp; Scan</span>
+        </button>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>Organisation</label><input type="text" id="orgInp" value="tr" onkeydown="if(event.key==='Enter')connect()"/></div>
+        <div class="fg"><label>Repo Prefix</label><input type="text" id="prefInp" value="a208548_" onkeydown="if(event.key==='Enter')connect()"/></div>
+        <div class="fg"><label>PR Label</label><input type="text" id="lblInp" value="AI Generated" onkeydown="if(event.key==='Enter')connect()"/></div>
+      </div>
+      <div class="status s-idle" id="statusEl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Enter your GitHub PAT and click <strong>Connect &amp; Scan</strong>.</span>
+      </div>
+      <div class="prog" id="progEl">
+        <div class="prog-lbl"><span id="progLbl">Scanning…</span><span id="progPct">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="dash">
+      <div class="empty" style="padding:72px 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        <p>Authenticate above to load the dashboard</p>
+        <small>Will scan every <code>a208548_*</code> repo automatically</small>
+      </div>
+    </div>
+  </div>
 
+  <!-- ══════════ TAB 2: ADO SPRINT ══════════ -->
+  <div class="tab-panel" id="panel-ado">
+    <div class="acard">
+      <div class="acard-top">
+        <div class="acard-ico" style="background:var(--tealbg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal)"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <div class="acard-title">Azure DevOps — Sprint Monitor</div>
+          <div class="acard-desc">Uses your ADO Personal Access Token with <code>Work Items (Read)</code> scope. <a href="https://dev.azure.com" target="_blank">Generate at dev.azure.com ↗</a> → User Settings → Personal Access Tokens.</div>
+        </div>
+      </div>
+      <div class="trow">
+        <div class="fg">
+          <label>ADO Personal Access Token</label>
+          <input type="password" id="adoTok" placeholder="ADO PAT — Work Items (Read) scope" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')adoFetchSprints()"/>
+        </div>
+        <button class="btn btn-icon" onclick="toggleAdoTok()" title="Show/hide token">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="adoEyeSvg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn btn-teal" id="adoConnectBtn" onclick="adoFetchSprints()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span id="adoConnectLbl">Connect</span>
+        </button>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>ADO Organisation</label><input type="text" id="adoOrg" value="tr-tax" placeholder="e.g. tr-tax" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+        <div class="fg"><label>Project</label><input type="text" id="adoProject" value="TaxProf" placeholder="e.g. TaxProf" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+        <div class="fg"><label>Team</label><input type="text" id="adoTeam" value="surePrep-tcd-elite" placeholder="e.g. surePrep-tcd-elite" onkeydown="if(event.key==='Enter')adoFetchSprints()"/></div>
+      </div>
+      <!-- Sprint selector row — shown after connect -->
+      <div id="adoSprintRow" style="display:none;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+          <div class="fg" style="flex:1;min-width:200px">
+            <label>Select Sprint</label>
+            <select id="adoSprintSel" class="fsel" style="height:38px;width:100%;font-size:13px;padding:0 28px 0 12px">
+              <option value="">— pick a sprint —</option>
+            </select>
+          </div>
+          <button class="btn btn-teal" id="adoScanBtn" onclick="adoConnect()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="adoScanLbl">Load Sprint</span>
+          </button>
+        </div>
+      </div>
+      <div class="status s-idle" id="adoStatus">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Enter your ADO PAT, fill in org/project/team, then click <strong>Connect</strong> to load available sprints.</span>
+      </div>
+    </div>
+
+    <div id="adoDash">
+      <div class="empty" style="padding:72px 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <p>Authenticate above to load the sprint dashboard</p>
+        <small>Connects to <code>dev.azure.com/{org}/{project}</code> for team <code>surePrep-tcd-elite</code></small>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .wrap -->
+
+<div class="toast" id="toast"></div>
+
+
+<!-- Dashboard logic -->
+<script src="assets/js/dashboard.js"></script>
 </body>
 </html>
